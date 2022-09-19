@@ -136,6 +136,7 @@ func (f *frameImpl) WaitForLoadState(options ...FrameWaitForLoadStateOptions) {
 	succeed := make(chan struct{})
 	f.Once("loadstate", func(ev ...interface{}) {
 		gotState := ev[0].(string)
+		fmt.Printf("PW DEBUG: Got load state \"%s\"\n", gotState)
 		if gotState == state {
 			close(succeed)
 		}
@@ -145,8 +146,10 @@ func (f *frameImpl) WaitForLoadState(options ...FrameWaitForLoadStateOptions) {
 	} else {
 		select {
 		case <-succeed:
+			fmt.Printf("PW DEBUG: WaitForLoadState() succeeded\n")
 			break
 		case <-time.After(time.Duration(timeout) * time.Millisecond):
+			fmt.Printf("PW DEBUG: WaitForLoadState() timed out\n")
 			break
 		}
 	}
