@@ -1371,6 +1371,7 @@ type Page interface {
 	EvalOnSelectorAll(selector string, expression string, options ...interface{}) (interface{}, error)
 	ExpectConsoleMessage(cb func() error) (ConsoleMessage, error)
 	ExpectDownload(cb func() error) (Download, error)
+	ExpectDownloadWithTimeout(cb func() error, timeoutMsec float64) (Download, error)
 	ExpectEvent(event string, cb func() error, predicates ...interface{}) (interface{}, error)
 	ExpectFileChooser(cb func() error) (FileChooser, error)
 	ExpectLoadState(state string, cb func() error) error

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"reflect"
+	"time"
 )
 
 type pageImpl struct {
@@ -331,6 +332,19 @@ func (p *pageImpl) WaitForEvent(event string, predicate ...interface{}) interfac
 	return <-waitForEvent(p, event, predicate...)
 }
 
+func (p *pageImpl) WaitForEventWithTimeout(event string, timeoutMsec float64, predicate ...interface{}) interface{} {
+	if timeoutMsec <= 0 {
+		return p.WaitForEvent(event, predicate)
+	}
+	select {
+	case result := <-waitForEvent(p, event, predicate...):
+		return result
+	case <-time.After(time.Duration(timeoutMsec) * time.Millisecond):
+		// TODO: I think we should stop the goroutine in waitForEvent() and call RemoveListener() to remove the handler
+		return nil
+	}
+}
+
 func (p *pageImpl) WaitForNavigation(options ...PageWaitForNavigationOptions) (Response, error) {
 	return p.mainFrame.WaitForNavigation(options...)
 }
@@ -401,6 +415,14 @@ func (p *pageImpl) ExpectedDialog(cb func() error) (Dialog, error) {
 
 func (p *pageImpl) ExpectDownload(cb func() error) (Download, error) {
 	download, err := newExpectWrapper(p.WaitForEvent, []interface{}{"download"}, cb)
+	return download.(*downloadImpl), err
+}
+
+func (p *pageImpl) ExpectDownloadWithTimeout(cb func() error, timeoutMsec float64) (Download, error) {
+	download, err := newExpectWrapper(p.WaitForEventWithTimeout, []interface{}{"download", timeoutMsec}, cb)
+	if download == nil {
+		return nil, fmt.Errorf("timeout %2fms exceeded", timeoutMsec)
+	}
 	return download.(*downloadImpl), err
 }
 
