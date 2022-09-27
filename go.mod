@@ -1,4 +1,4 @@
-module github.com/playwright-community/playwright-go
+module github.com/shoamano83/playwright-go
 
 go 1.14
 
