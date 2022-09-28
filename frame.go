@@ -130,27 +130,36 @@ func (f *frameImpl) WaitForLoadState(options ...FrameWaitForLoadStateOptions) {
 			timeout = int(*options[0].Timeout)
 		}
 	}
-	if f.loadStates.Has(state) {
-		return
-	}
-	succeed := make(chan struct{})
-	f.Once("loadstate", func(ev ...interface{}) {
-		gotState := ev[0].(string)
-		fmt.Printf("PW DEBUG: Got load state \"%s\"\n", gotState)
-		if gotState == state {
-			close(succeed)
+
+	// poll every 500 msecs
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	if timeout <= 0 {
+		for {
+			if f.loadStates.Has(state) {
+				fmt.Printf("PW DEBUG: got %s state, WaitForLoadState() succeeded\n", state)
+				return
+			}
+			<-ticker.C
 		}
-	})
-	if timeout == 0 {
-		<-succeed
 	} else {
-		select {
-		case <-succeed:
-			fmt.Printf("PW DEBUG: WaitForLoadState() succeeded\n")
-			break
-		case <-time.After(time.Duration(timeout) * time.Millisecond):
-			fmt.Printf("PW DEBUG: WaitForLoadState() timed out\n")
-			break
+		timeoutChan := time.After(time.Duration(timeout) * time.Millisecond)
+		for {
+			if f.loadStates.Has(state) {
+				fmt.Printf("PW DEBUG: got %s state, WaitForLoadState() succeeded\n", state)
+				return
+			}
+
+			select {
+			case <-ticker.C:
+			case <-timeoutChan:
+				// for debugging
+				if !f.loadStates.Has(state) {
+					fmt.Printf("PW DEBUG: WaitForLoadState() timed out\n")
+				}
+				return
+			}
 		}
 	}
 }
