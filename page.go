@@ -189,7 +189,7 @@ func (p *pageImpl) Reload(options ...PageReloadOptions) (Response, error) {
 	return fromChannel(response).(*responseImpl), err
 }
 
-func (p *pageImpl) WaitForLoadState(options ...PageWaitForLoadStateOptions) {
+func (p *pageImpl) WaitForLoadState(options ...PageWaitForLoadStateOptions) error {
 	var frameOptions []FrameWaitForLoadStateOptions
 	if len(options) == 1 {
 		frameOptions = append(frameOptions, FrameWaitForLoadStateOptions{
@@ -197,7 +197,7 @@ func (p *pageImpl) WaitForLoadState(options ...PageWaitForLoadStateOptions) {
 			Timeout: options[0].Timeout,
 		})
 	}
-	p.mainFrame.WaitForLoadState(frameOptions...)
+	return p.mainFrame.WaitForLoadState(frameOptions...)
 }
 
 func (p *pageImpl) GoBack(options ...PageGoBackOptions) (Response, error) {

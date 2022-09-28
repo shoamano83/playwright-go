@@ -119,7 +119,7 @@ func (f *frameImpl) Page() Page {
 	return f.page
 }
 
-func (f *frameImpl) WaitForLoadState(options ...FrameWaitForLoadStateOptions) {
+func (f *frameImpl) WaitForLoadState(options ...FrameWaitForLoadStateOptions) error {
 	state := "load"
 	timeout := 30000
 	if len(options) == 1 {
@@ -139,7 +139,7 @@ func (f *frameImpl) WaitForLoadState(options ...FrameWaitForLoadStateOptions) {
 		for {
 			if f.loadStates.Has(state) {
 				fmt.Printf("PW DEBUG: got %s state, WaitForLoadState() succeeded\n", state)
-				return
+				return nil
 			}
 			<-ticker.C
 		}
@@ -148,17 +148,18 @@ func (f *frameImpl) WaitForLoadState(options ...FrameWaitForLoadStateOptions) {
 		for {
 			if f.loadStates.Has(state) {
 				fmt.Printf("PW DEBUG: got %s state, WaitForLoadState() succeeded\n", state)
-				return
+				return nil
 			}
 
 			select {
 			case <-ticker.C:
 			case <-timeoutChan:
-				// for debugging
-				if !f.loadStates.Has(state) {
+				if f.loadStates.Has(state) {
+					return nil
+				} else {
 					fmt.Printf("PW DEBUG: WaitForLoadState() timed out\n")
+					return fmt.Errorf("timed out: did not reach state '%s' within %d msecs", state, timeout)
 				}
-				return
 			}
 		}
 	}
