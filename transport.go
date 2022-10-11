@@ -31,6 +31,9 @@ func (t *pipeTransport) Start() error {
 			return fmt.Errorf("could not read padding: %w", err)
 		}
 		length := binary.LittleEndian.Uint32(lengthContent)
+		if os.Getenv("DEBUGP") != "" {
+			fmt.Printf("RECV> length=%d\n", length)
+		}
 
 		msg := &message{}
 		if err := json.NewDecoder(io.LimitReader(reader, int64(length))).Decode(&msg); err != nil {
